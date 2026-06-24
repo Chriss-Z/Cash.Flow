@@ -1,0 +1,56 @@
+CREATE TABLE billing_subscriptions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(512) NULL,
+    period_type ENUM('daily','monthly','yearly') NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    daily_rate DECIMAL(15,2) NULL,
+    duration_days INT NULL,
+    monthly_cycle_day TINYINT NULL,
+    prorata BOOLEAN NOT NULL DEFAULT FALSE,
+    annual_discount_pct DECIMAL(5,2) NOT NULL DEFAULT 0,
+    start_date DATE NOT NULL,
+    next_due_date DATE NOT NULL,
+    expires_at DATETIME NULL,
+    status ENUM('active','paused','cancelled') NOT NULL DEFAULT 'active',
+    meta JSON NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE billing_charges (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    billing_subscription_id BIGINT UNSIGNED NOT NULL,
+    invoice_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    discount_pct DECIMAL(5,2) NOT NULL DEFAULT 0,
+    status ENUM('pending','paid','failed') NOT NULL DEFAULT 'pending',
+    description VARCHAR(512) NULL,
+    paid_at DATETIME NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    FOREIGN KEY (billing_subscription_id) REFERENCES billing_subscriptions(id) ON DELETE CASCADE
+);
+
+function createDailyBilling(user, name, dailyRate, jumlahHari):
+    total = dailyRate * jumlahHari
+    today = now().startOfDay()
+    dueDate = today.addDays(jumlahHari).setTime(23, 59, 59)
+
+    subscription = BillingSubscription.create({
+        user_id: user.id,
+        name: name,
+        period_type: 'daily',
+        daily_rate: dailyRate,
+        duration_days: jumlahHari,
+        amount: total,
+        start_date: today,
+        next_due_date: dueDate,
+        expires_at: dueDate,
+        status: 'active'
+    })
+
+    return subscription
