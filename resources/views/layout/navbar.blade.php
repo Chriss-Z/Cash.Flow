@@ -1,4 +1,7 @@
 <nav class="sidebar">
+    @php
+        $sidebarUser = auth()->user()?->fresh();
+    @endphp
     <div class="sidebar-top">
         <a href="/beranda" class="brand">
             <span class="brand-accent">Cash.</span><span class="brand-muted">Flow</span>
@@ -75,7 +78,7 @@
             <span>Target</span>
         </a>
 
-        <a href="#" class="sidebar-link">
+        <a href="{{ route('setelan') }}" class="sidebar-link {{ request()->routeIs('setelan') ? 'active' : '' }}">
             <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10 4.5C11.1046 4.5 12 5.39543 12 6.5C12 7.60457 11.1046 8.5 10 8.5C8.89543 8.5 8 7.60457 8 6.5C8 5.39543 8.89543 4.5 10 4.5Z" stroke="currentColor" stroke-width="1.5"/>
@@ -89,28 +92,38 @@
 
     <div class="sidebar-bottom">
         <a href="{{ route('logout') }}" class="sidebar-link logout">
-            <span class="icon">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M7 5L3 10L7 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M3 10H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M13 5H16C16.5523 5 17 5.44772 17 6V14C17 14.5523 16.5523 15 16 15H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-            </span>
-            <span>Keluar</span>
-        </a>
+    <span class="icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 5L3 10L7 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 10H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M13 5H16C16.5523 5 17 5.44772 17 6V14C17 14.5523 16.5523 15 16 15H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+    </span>
+    <span>Keluar</span>
+</a>
 
-        <div class="profile-card">
-            <div class="avatar">CP</div>
+
+        <a href="{{ route('setelan') }}" class="profile-card profile-card-link">
+            <div class="avatar {{ $sidebarUser && $sidebarUser->profile_photo_url ? 'has-photo' : '' }}">
+                @if($sidebarUser && $sidebarUser->profile_photo_url)
+                    <img
+                        src="{{ $sidebarUser->profile_photo_url }}"
+                        alt="Foto profil {{ $sidebarUser->name }}"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                    >
+                @endif
+                <span style="display: {{ $sidebarUser && $sidebarUser->profile_photo_url ? 'none' : 'flex' }};">{{ $sidebarUser ? $sidebarUser->profile_initials : 'CF' }}</span>
+            </div>
             <div class="profile-info">
-                <div class="profile-name">Christian Prawira G</div>
+                <div class="profile-name">{{ $sidebarUser->name ?? 'Cash.Flow User' }}</div>
                 <div class="profile-subtitle">View profile</div>
             </div>
-            <button class="profile-more" aria-label="More options">
+            <span class="profile-more" aria-label="More options">
                 <span></span>
                 <span></span>
                 <span></span>
-            </button>
-        </div>
+            </span>
+        </a>
     </div>
 </nav>
 
@@ -244,6 +257,12 @@
         padding: 14px;
         background: #14181B;
         border-radius: 18px;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .profile-card-link {
+        cursor: pointer;
     }
 
     .avatar {
@@ -256,6 +275,19 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
+        flex: 0 0 44px;
+        overflow: hidden;
+    }
+
+    .avatar.has-photo {
+        background: #111316;
+    }
+
+    .avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .profile-info {

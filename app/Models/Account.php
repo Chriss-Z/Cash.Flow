@@ -29,4 +29,10 @@ class Account extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function applyBalanceChange(string $type, $amount): void
+    {
+        $delta = $type === 'income' ? (float) $amount : -(float) $amount;
+        $this->balance = round((float) $this->balance + $delta, 2);
+    }
 }

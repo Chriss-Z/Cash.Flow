@@ -83,7 +83,6 @@
                             data-name="{{ $bill->name }}"
                             data-amount="{{ $bill->plan_amount ?? $bill->amount }}"
                             data-start-date="{{ $bill->start_date ? $bill->start_date->toDateString() : now()->toDateString() }}"
-                            data-daily-rate="{{ $bill->daily_rate }}"
                             data-duration-days="{{ $bill->duration_days }}"
                             data-monthly-option="{{ $bill->prorata ? 'prorata' : 'same_date' }}"
                             data-monthly-cycle-day="{{ $bill->monthly_cycle_day ?? ($bill->start_date ? $bill->start_date->day : now()->day) }}"
@@ -152,16 +151,13 @@
             <label class="modal-label" for="modal-bill-name">Nama Tagihan</label>
             <input id="modal-bill-name" name="name" type="text" class="modal-input" required>
 
-            <label class="modal-label" for="modal-bill-amount">Tarif Dasar (Rp)</label>
+            <label class="modal-label" for="modal-bill-amount">Harga (Rp)</label>
             <input id="modal-bill-amount" name="amount" type="text" inputmode="decimal" class="modal-input currency-input" required>
 
             <label class="modal-label" for="modal-start-date">Tanggal Mulai</label>
             <input id="modal-start-date" name="start_date" type="date" class="modal-input" value="{{ now()->toDateString() }}" required>
 
             <div class="period-group" id="daily-fields" hidden>
-                <label class="modal-label" for="modal-daily-rate">Tarif Harian (Rp)</label>
-                <input id="modal-daily-rate" name="daily_rate" type="text" inputmode="decimal" class="modal-input currency-input">
-
                 <label class="modal-label" for="modal-duration-days">Jumlah Hari</label>
                 <input id="modal-duration-days" name="duration_days" type="number" min="1" step="1" class="modal-input">
             </div>
@@ -550,7 +546,6 @@
     const modalBillName = document.getElementById('modal-bill-name');
     const modalBillAmount = document.getElementById('modal-bill-amount');
     const modalStartDate = document.getElementById('modal-start-date');
-    const modalDailyRate = document.getElementById('modal-daily-rate');
     const modalDurationDays = document.getElementById('modal-duration-days');
     const modalMonthlyOption = document.getElementById('modal-monthly-option');
     const modalMonthlyCycleDay = document.getElementById('modal-monthly-cycle-day');
@@ -577,7 +572,6 @@
             modalBillName.value = bill.name;
             modalBillAmount.value = bill.amount;
             modalStartDate.value = bill.startDate;
-            modalDailyRate.value = bill.dailyRate || '';
             modalDurationDays.value = bill.durationDays || '';
             modalMonthlyOption.value = bill.monthlyOption || 'same_date';
             modalMonthlyCycleDay.value = bill.monthlyCycleDay || new Date().getDate();
@@ -592,7 +586,6 @@
             modalBillName.value = '';
             modalBillAmount.value = '';
             modalStartDate.value = '{{ now()->toDateString() }}';
-            modalDailyRate.value = '';
             modalDurationDays.value = '';
             modalMonthlyOption.value = 'same_date';
             modalMonthlyCycleDay.value = '{{ min(now()->day, 28) }}';
@@ -622,7 +615,6 @@
                 name: this.dataset.name,
                 amount: this.dataset.amount,
                 startDate: this.dataset.startDate,
-                dailyRate: this.dataset.dailyRate,
                 durationDays: this.dataset.durationDays,
                 monthlyOption: this.dataset.monthlyOption,
                 monthlyCycleDay: this.dataset.monthlyCycleDay,

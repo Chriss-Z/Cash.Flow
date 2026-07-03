@@ -15,7 +15,7 @@ use App\Mail\OtpMail;
 class AuthController extends Controller
 {
     //Register
-     public function register(Request $request)
+    public function register(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -63,7 +63,7 @@ class AuthController extends Controller
             ->with('status', 'Kode OTP berhasil dikirim ke email Anda. Silakan cek email untuk melanjutkan.');
     }
     // Login
-     public function login(Request $request)
+    public function login(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -76,7 +76,23 @@ class AuthController extends Controller
             return back()->with('error', 'Email atau password salah')->withInput();
         }
 
-        Auth::login($user);
+        $remember = $request->has('remember');
+
+        Auth::login($user, $remember);
+
+        $request->session()->regenerate();
+
+        if ($remember) {
+
+            $user->update([
+                'remember_login_started_at' => now()
+            ]);
+        } else {
+
+            $user->update([
+                'remember_login_started_at' => null
+            ]);
+        }
 
         return redirect()->route('beranda');
     }
@@ -93,8 +109,8 @@ class AuthController extends Controller
         if (!$user) {
             return back()->with('error', 'Email tidak ditemukan')->withInput();
         }
-    // OTP
-       $otp = rand(100000, 999999);
+        // OTP
+        $otp = rand(100000, 999999);
 
         // simpan ke database
         DB::table('password_resets')->updateOrInsert(
@@ -104,8 +120,8 @@ class AuthController extends Controller
                 'created_at' => now()
             ]
         );
-    // Kirim mail
-    Mail::to($request->email)->send(new OtpMail($otp));
+        // Kirim mail
+        Mail::to($request->email)->send(new OtpMail($otp));
         return redirect()->route('otp', ['email' => $request->email])->with('status', 'Kode OTP berhasil dikirim ke email Anda.');
     }
 
@@ -157,13 +173,32 @@ class AuthController extends Controller
             DB::table('password_resets')->where('email', $request->email)->delete();
             session()->forget(['otp_email', 'otp_flow']);
 
-            Auth::login($user);
+            Auth::login($user, false);
+            $user->update([
+                'remember_login_started_at' => null
+            ]);
             return redirect()->route('beranda')->with('status', 'Registrasi berhasil. Selamat datang!');
         }
 
         session(['reset_email' => $request->email]);
 
         return redirect()->route('createpass');
+    }
+    public function logout(Request $request)
+    {
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            $user->remember_login_started_at = null;
+            $user->save();
+        }
+
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
     }
 
     public function showCreatePass(Request $request)

@@ -489,6 +489,7 @@
         border-radius: 16px;
         font-size: 0.95rem;
         margin-bottom: 18px;
+        box-sizing: border-box; 
     }
 
     #modal-submit-button {

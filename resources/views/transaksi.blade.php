@@ -128,6 +128,11 @@
                 <div class="transaction-price">
                     <strong>{{ $trx->type === 'income' ? '+' : '-' }}Rp {{ number_format($trx->amount, 0, ',', '.') }}</strong>
                     <button type="button" class="edit-transaction-btn" data-id="{{ $trx->id }}" data-account-id="{{ $trx->account_id }}" data-category-id="{{ $trx->category_id }}" data-type="{{ $trx->type }}" data-amount="{{ $trx->amount }}" data-description="{{ $trx->description }}" data-date="{{ $trx->date->format('Y-m-d') }}">Edit</button>
+                    <form method="POST" action="{{ route('transaksi.delete') }}" class="transaction-delete-form" onsubmit="return confirm('Hapus transaksi ini? Saldo akun akan disesuaikan kembali.');">
+                        @csrf
+                        <input type="hidden" name="transaction_id" value="{{ $trx->id }}" />
+                        <button type="submit" class="delete-transaction-btn" aria-label="Hapus transaksi">−</button>
+                    </form>
                 </div>
             </div>
         @empty
@@ -323,6 +328,10 @@
         display: grid;
         gap: 12px;
     }
+    .transaction-item {
+        display: grid;
+        gap: 10px;
+    }
     .transaction-price {
         text-align: right;
         min-width: 120px;
@@ -341,6 +350,29 @@
     }
     .transaction-price button:hover {
         background: #D1D5DB;
+    }
+    .transaction-delete-form {
+        margin: 0;
+        justify-self: end;
+    }
+    .delete-transaction-btn {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 999px;
+        background: #EF4444;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-size: 1.05rem;
+        line-height: 1;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 18px rgba(239, 68, 68, 0.22);
+    }
+    .delete-transaction-btn:hover {
+        background: #DC2626;
     }
     .meta-subtitle {
         color: #6B7280;
@@ -374,6 +406,7 @@
         font-size: 0.95rem;
         background: #FFFFFF;
         outline: none;
+        box-sizing: border-box;
     }
     .button-primary {
         border: none;

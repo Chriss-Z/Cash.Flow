@@ -13,6 +13,38 @@
             <span>Welcome back to your finance dashboard</span>
         </div>
     </div>
+    <div class="topbar-right">
+        <div class="notification-trigger">
+            <button type="button" class="icon-btn" aria-label="Notifications" id="topbar-notification-button">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                @if(count($notifications ?? []))
+                    <span class="notification-badge">{{ count($notifications) }}</span>
+                @endif
+            </button>
+            <div class="notification-menu" id="notification-menu" hidden>
+                <div class="notification-menu-header">
+                    <strong>Notifikasi</strong>
+                </div>
+                @forelse($notifications ?? [] as $notification)
+                    <div class="notification-row">{{ $notification }}</div>
+                @empty
+                    <div class="notification-row empty">Tidak ada notifikasi baru.</div>
+                @endforelse
+            </div>
+        </div>
+        <div class="search-pill">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <input id="beranda-search" type="text" placeholder="Telusuri" autocomplete="off" />
+            <button type="button" class="search-button" aria-label="Search" id="search-button">Cari</button>
+        </div>
+        <div id="search-feedback" class="search-feedback" aria-live="polite"></div>
+    </div>
 </div>
 
 @if(session('status') || session('error'))
@@ -27,7 +59,10 @@
         <div class="card-small">
             <div>
                 <h3>Total Saldo</h3>
-                <strong>Rp {{ number_format($totalSaldo,0,',','.') }}</strong>
+                <div class="balance-amount-row">
+                    <strong>{{ number_format($totalSaldo,0,',','.') }}</strong>
+                    <span class="saldo-icon">Rp</span>
+                </div>
             </div>
             <span class="card-badge">All Accounts</span>
         </div>
@@ -45,9 +80,9 @@
             <div class="account-card-panel">
                 <div class="account-card-content">
                     <span class="account-number" id="account-number">{{ data_get($accounts->first(), 'number', '**** **** **** 2598') }}</span>
-                    <div class="account-amount"><span class="account-currency-icon" id="account-currency-icon">{{ data_get($accounts->first(), 'currency_icon', '') }}</span><span id="account-amount-text">{{ data_get($accounts->first(), 'formatted', 'Rp 0') }}</span></div>
+                    <div class="account-amount"><span id="account-amount-text">{{ data_get($accounts->first(), 'formatted', 'Rp 0') }}</span><span class="account-currency-icon" id="account-currency-icon">{{ data_get($accounts->first(), 'currency_icon', '') }}</span></div>
                 </div>
-                <span class="account-chip"></span>
+                <span class="account-chip" id="account-chip">{{ data_get($accounts->first(), 'chipLabel', 'Duit') }}</span>
             </div>
 
             <div class="account-footer">
@@ -132,25 +167,28 @@
             <h3>Riwayat Transaksi</h3>
             <a href="#" style="font-size: 0.9rem; color: #1F9C8A; text-decoration: none;">View All</a>
         </div>
-        <div class="history-tabs">
-            <button class="history-tab active">Semua</button>
-            <button class="history-tab">Pendapatan</button>
-            <button class="history-tab">Pengeluaran</button>
+        <div class="history-tabs" id="history-tabs">
+            <button type="button" class="history-tab active" data-filter="all">Semua</button>
+            <button type="button" class="history-tab" data-filter="income">Pendapatan</button>
+            <button type="button" class="history-tab" data-filter="expense">Pengeluaran</button>
         </div>
 
-        <div style="margin-top: 18px; display: grid; gap: 18px;">
+        <div style="margin-top: 18px; display: grid; gap: 18px;" id="history-list">
             @foreach($transactions ?? [] as $trx)
-            <div class="transaction-item">
+            <div class="transaction-item" data-type="{{ $trx->type }}" data-description="{{ strtolower($trx->description . ' ' . data_get($trx, 'category.name', '')) }}">
                 <div class="transaction-icon">{{ $trx->type == 'income' ? '💰' : '💸' }}</div>
                 <div class="transaction-details">
                     <strong>{{ $trx->description }}</strong>
                     <span>{{ $trx->date }}</span>
                 </div>
                 <div class="transaction-price">
-                    <strong>Rp {{ number_format($trx->amount,0,',','.') }}</strong>
+                    <strong>{{ $trx->type == 'income' ? '+' : '-' }}Rp {{ number_format($trx->amount,0,',','.') }}</strong>
                 </div>
             </div>
             @endforeach
+            <div class="empty-state no-history-message" id="history-empty-message" style="display:none;">
+                Tidak ada transaksi yang cocok.
+            </div>
         </div>
     </section>
 
@@ -232,9 +270,14 @@
 
         </div>
         <span>
-            {{ $item['change'] ?? 0 }}
-            <span class="breakdown-change{{ ($item['change_direction'] ?? 'up') === 'down' ? ' down' : '' }}">
-                {{ ($item['change_direction'] ?? 'up') === 'down' ? '↓' : '↑' }}
+            @php
+                $changeValue = (int) ($item['change'] ?? 0);
+                $direction = $changeValue === 0 ? 'neutral' : (($item['change_direction'] ?? 'up') === 'down' ? 'down' : 'up');
+                $changeLabel = $direction === 'down' ? 'Turun' : ($direction === 'neutral' ? 'Tetap' : 'Naik');
+                $changeSymbol = $direction === 'down' ? '↓' : ($direction === 'neutral' ? '•' : '↑');
+            @endphp
+            <span class="breakdown-change{{ $direction === 'down' ? ' down' : '' }}{{ $direction === 'neutral' ? ' neutral' : '' }}">
+                {{ $changeSymbol }} {{ $changeLabel }} Rp {{ number_format($changeValue, 0, ',', '.') }}
             </span>
         </span>
     </div>
@@ -419,6 +462,28 @@
         font-size: 0.95rem;
     }
 
+    .balance-amount-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .saldo-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #1F9C8A 0%, #10B981 100%);
+        color: #FFFFFF;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: 0 10px 18px rgba(31, 156, 138, 0.18);
+    }
+
     .notification-card {
         display: flex;
         align-items: center;
@@ -440,8 +505,8 @@
     }
 
     .notification-trigger {
-        position: relative;
-        z-index: 9999;
+         position: relative;
+ display: inline-flex;
     }
 
     .notification-badge {
@@ -461,17 +526,33 @@
     }
 
     .notification-menu {
-        position: absolute;
-        top: 62px;
-        right: 0;
-        width: 320px;
-        background: #FFFFFF;
-        border: 1px solid #E5E7EB;
-        border-radius: 18px;
-        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
-        padding: 16px;
-        z-index: 9998;
+         position: absolute;
+
+    top: 100%;
+
+    right: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+
+    width: 320px;
+
+    background: white;
+
+    border: 1px solid #E5E7EB;
+    border-radius: 18px;
+
+    padding: 16px;
+
+    z-index: 999999;
+
+    box-shadow: 0 18px 48px rgba(15,23,42,.12);
     }
+    .topbar, 
+.topbar-right{
+    position: relative;
+    overflow: visible !important;
+    z-index: 9999;
+}
 
     .notification-menu-header {
         border-bottom: 1px solid #E5E7EB;
@@ -588,10 +669,19 @@
     }
 
     .account-chip {
-        width: 36px;
-        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 72px;
+        height: 28px;
+        padding: 0 16px;
         border-radius: 999px;
         background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+        color: #FFFFFF;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
     }
 
     .account-footer {
@@ -731,6 +821,10 @@
         transform: translateY(-1px);
         box-shadow: 0 22px 44px -24px rgba(31, 156, 138, 0.7);
     }
+
+    .breakdown-change.neutral {
+        color: #6B7280;
+    }
 </style>
 
 <script>
@@ -740,6 +834,14 @@
         const monthlyTargetEl = document.getElementById('target-monthly');
         const progressCircle = document.getElementById('progress-ring-circle');
         const progressText = document.getElementById('progress-ring-text');
+        const notificationButton = document.getElementById('topbar-notification-button');
+        const notificationMenu = document.getElementById('notification-menu');
+        const searchInput = document.getElementById('beranda-search');
+        const searchButton = document.getElementById('search-button');
+        const searchFeedback = document.getElementById('search-feedback');
+        const historyTabs = document.querySelectorAll('#history-tabs .history-tab');
+        const historyItems = document.querySelectorAll('#history-list .transaction-item');
+        const historyEmptyMessage = document.getElementById('history-empty-message');
 
         function updateProgressDisplay(progress, target) {
             const progressValue = Number(progress) || 0;
@@ -772,7 +874,7 @@
         const chartYAxis = document.getElementById('chart-y-axis');
 
         const chartData = @json($chartData);
-        const accounts = @json($accounts -> toArray());
+        const accounts = @json($accounts->toArray());
         let activeAccount = 0;
 
         function formatRupiah(value, withDecimals = false) {
@@ -822,23 +924,52 @@
             `).join('');
         }
 
+        function applyHistoryFilter() {
+            const activeTab = document.querySelector('#history-tabs .history-tab.active');
+            const filterType = activeTab ? activeTab.dataset.filter : 'all';
+            const searchTerm = (searchInput?.value || '').trim().toLowerCase();
+            let visibleCount = 0;
+
+            historyItems.forEach(item => {
+                const itemType = item.dataset.type;
+                const itemDescription = item.dataset.description || '';
+                const matchesType = filterType === 'all' || itemType === filterType;
+                const matchesSearch = searchTerm === '' || itemDescription.includes(searchTerm);
+                const visible = matchesType && matchesSearch;
+                item.style.display = visible ? 'flex' : 'none';
+                if (visible) visibleCount += 1;
+            });
+
+            if (historyEmptyMessage) {
+                historyEmptyMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            if (searchFeedback) {
+                searchFeedback.textContent = searchTerm === ''
+                    ? ''
+                    : `Menampilkan ${visibleCount} transaksi untuk "${searchTerm}".`;
+            }
+        }
+
         function setAccount(index) {
             const account = accounts[index] || {
                 type: 'Debit Card',
                 title: 'Paspor blue debit',
                 number: '**** **** **** 2598',
                 formatted: 'Rp 0',
-                currency_icon: '',
+                currency_icon: 'Rp',
+                chipLabel: 'Duit',
                 chipStyle: ''
             };
             accountTypeText.textContent = account.type;
             accountTitleText.textContent = account.title;
             accountNumberText.textContent = account.number || 'No account number';
             accountAmountText.textContent = account.formatted;
-            accountCurrencyIcon.textContent = account.currency_icon || '';
-            accountCurrencyIcon.style.display = account.currency_icon ? 'inline-flex' : 'none';
+            accountCurrencyIcon.textContent = account.currency_icon || 'Rp';
+            accountCurrencyIcon.style.display = 'inline-flex';
             accountNumberText.style.display = account.number ? 'block' : 'none';
             accountChip.className = 'account-chip' + (account.chipStyle ? ' ' + account.chipStyle : '');
+            accountChip.textContent = account.chipLabel || 'Duit';
             prevBtn.disabled = index <= 0;
             nextBtn.disabled = index >= accounts.length - 1 || accounts.length === 0;
         }
@@ -857,21 +988,50 @@
             }
         });
 
-        chartSelect.addEventListener('change', function() {
-            renderChart(chartSelect.value);
+        if (chartSelect) {
+            chartSelect.addEventListener('change', function() {
+                renderChart(chartSelect.value);
+            });
+        }
+
+        if (notificationButton && notificationMenu) {
+            notificationButton.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const rect = notificationButton.getBoundingClientRect();
+
+    notificationMenu.style.top = `${rect.bottom + 10}px`;
+    notificationMenu.style.right = `${window.innerWidth - rect.right}px`;
+
+    notificationMenu.hidden = !notificationMenu.hidden;
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!notificationButton.contains(event.target) && !notificationMenu.contains(event.target)) {
+                    notificationMenu.hidden = true;
+                }
+            });
+        }
+
+        if (searchButton) {
+            searchButton.addEventListener('click', applyHistoryFilter);
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applyHistoryFilter);
+        }
+
+        historyTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                historyTabs.forEach(button => button.classList.remove('active'));
+                tab.classList.add('active');
+                applyHistoryFilter();
+            });
         });
 
         setAccount(activeAccount);
         renderChart('weekly');
-        updateProgressDisplay({
-            {
-                $progress ?? 0
-            }
-        }, {
-            {
-                optional($target) - > target_amount ?? 0
-            }
-        });
+        applyHistoryFilter();
+        updateProgressDisplay(@json($progress ?? 0), @json(optional($target)->target_amount ?? 0));
     });
 </script>
 

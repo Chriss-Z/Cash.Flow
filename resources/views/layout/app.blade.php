@@ -109,6 +109,63 @@
             height: 20px;
         }
 
+        .notification-trigger {
+            position: relative;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #EF4444;
+            color: #FFFFFF;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .notification-menu {
+            position: absolute;
+            top: 62px;
+            right: 0;
+            width: 320px;
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 18px;
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+            padding: 16px;
+            z-index: 9998;
+        }
+
+        .notification-menu-header {
+            border-bottom: 1px solid #E5E7EB;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: #111827;
+        }
+
+        .notification-row {
+            padding: 12px 0;
+            border-bottom: 1px solid #F3F4F6;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+
+        .notification-row:last-child {
+            border-bottom: none;
+        }
+
+        .notification-row.empty {
+            color: #9CA3AF;
+            text-align: center;
+        }
+
         .search-pill {
             display: inline-flex;
             align-items: center;

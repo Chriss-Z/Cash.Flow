@@ -165,7 +165,7 @@ class BillingService
                 $categoryId = $category ? $category->id : null;
 
                 DB::transaction(function () use ($user, $bill, $account, $categoryId, $today, &$notifications) {
-                    $account->balance -= $bill->amount;
+                    $account->applyBalanceChange('expense', $bill->amount);
                     $account->save();
 
                     $user->transactions()->create([
