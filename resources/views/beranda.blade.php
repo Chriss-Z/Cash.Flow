@@ -31,7 +31,7 @@
                 @forelse($notifications ?? [] as $notification)
                     <div class="notification-row">{{ $notification }}</div>
                 @empty
-                    <div class="notification-row empty">Tidak ada notifikasi baru.</div>
+                    <div class="notification-row empty">Tidak ada notifikasi terbaru.</div>
                 @endforelse
             </div>
         </div>
